@@ -22,18 +22,18 @@ class FutureTrade:
                                     database=self.aq.DB_NAME)
         w_cursor = w_connect.cursor()
 
-        w_cursor.execute("CREATE TABLE IF NOT EXISTS future_trade(\
-                        code VARCHAR(50) NOT NULL, \
-                        type VARCHAR(50) NOT NULL, \
-                        datetime DATETIME NOT NULL,\
-                        open DOUBLE NOT NULL,\
-                        high DOUBLE NOT NULL,\
-                        low DOUBLE NOT NULL,\
-                        close DOUBLE NOT NULL,\
-                        volume DOUBLE NOT NULL,\
-                        oi DOUBLE NOT NULL,\
-                        sp DOUBLE NOT NULL,\
-                        PRIMARY KEY(code,datetime));")
+        w_cursor.execute("""CREATE TABLE IF NOT EXISTS future_trade(
+                            code VARCHAR(50) NOT NULL,
+                            type VARCHAR(50) NOT NULL,
+                            datetime DATETIME NOT NULL,
+                            open DOUBLE NOT NULL,
+                            high DOUBLE NOT NULL,
+                            low DOUBLE NOT NULL,
+                            close DOUBLE NOT NULL,
+                            volume DOUBLE NOT NULL,
+                            oi DOUBLE NOT NULL,
+                            sp DOUBLE NOT NULL,
+                            PRIMARY KEY(code,datetime));""")
         w_connect.commit()
         w_cursor.close()
         w_connect.close()
@@ -121,8 +121,8 @@ class FutureTrade:
                 v = data[6]
                 oi = data[5]
                 sp = data[7]
-                w_cursor.execute("INSERT INTO future_trade VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) \
-                               ON DUPLICATE KEY UPDATE code=%s, datetime=%s;",
+                w_cursor.execute("""INSERT INTO future_trade VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    ON DUPLICATE KEY UPDATE code=%s, datetime=%s;""",
                                  (code, type, datetime, o, h, l, c, v, oi, sp, code, datetime))
 
         w_connect.commit()
@@ -169,8 +169,8 @@ class FutureTrade:
                 v = data[7]
                 oi = data[6]
                 sp = data[8]
-                w_cursor.execute("INSERT INTO future_trade VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) \
-                               ON DUPLICATE KEY UPDATE code=%s, datetime=%s;",
+                w_cursor.execute("""INSERT INTO future_trade VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    ON DUPLICATE KEY UPDATE code=%s, datetime=%s;""",
                                  (code, type, datetime, o, h, l, c, v, oi, sp, code, datetime))
         w_connect.commit()
         w_cursor.close()

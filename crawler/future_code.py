@@ -22,10 +22,10 @@ class FutureCode:
                                     database=self.aq.DB_NAME)
         cursor = connect.cursor()
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS future_code(\
-                      code VARCHAR(50) NOT NULL, \
-                      name VARCHAR(50) NOT NULL, \
-                      exchange VARCHAR(50) NOT NULL, PRIMARY KEY(code));")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS future_code(
+                            code VARCHAR(50) NOT NULL,
+                            name VARCHAR(50) NOT NULL,
+                            exchange VARCHAR(50) NOT NULL, PRIMARY KEY(code));""")
         connect.commit()
 
         self.aq.log("Create future_code table")
@@ -44,14 +44,3 @@ class FutureCode:
         connect.close()
 
         self.aq.log("Stop")
-
-
-
-
-
-
-    def update(self):
-        pass
-
-
-

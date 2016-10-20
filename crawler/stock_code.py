@@ -22,13 +22,13 @@ class StockCode:
                                     database=self.aq.DB_NAME)
         cursor = connect.cursor()
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS stock_code(\
-                        code VARCHAR(50) NOT NULL, \
-                        type VARCHAR(50) NOT NULL, \
-                        name VARCHAR(50) NOT NULL,\
-                        industry VARCHAR(50) NOT NULL,\
-                        region VARCHAR(50) NOT NULL,\
-                        PRIMARY KEY(code));")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS stock_code(
+                          code VARCHAR(50) NOT NULL,
+                          type VARCHAR(50) NOT NULL,
+                          name VARCHAR(50) NOT NULL,
+                          industry VARCHAR(50) NOT NULL,
+                          region VARCHAR(50) NOT NULL,
+                          PRIMARY KEY(code));""")
         connect.commit()
 
         self.aq.log("Create stock_code table")
