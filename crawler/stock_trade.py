@@ -17,19 +17,18 @@ class StockTrade:
     def execute(self):
         self.aq.log('Start')
 
-        url = "http://www.tdx.com.cn/products/data/data/vipdoc/shlday.zip"
-        path = self.aq.WS_PATH + "crawler/sh/"
-        file = path + "sh.zip"
+        path = self.aq.WS_PATH + "crawler/data/"
         self.create_path(path)
+
+        url = "http://www.tdx.com.cn/products/data/data/vipdoc/shlday.zip"
+        file = path + "sh.zip"
         self.download_file(url, file)
         self.aq.log('Download Shanghai trade file')
         self.unzip_file(path, file)
         self.aq.log('Unzip Shanghai trade file')
 
         url = "http://www.tdx.com.cn/products/data/data/vipdoc/szlday.zip"
-        path = path = self.aq.WS_PATH + "crawler/sz/"
         file = path + "sz.zip"
-        self.create_path(path)
         self.download_file(url, file)
         self.aq.log('Download Shenzhen trade file')
         self.unzip_file(path, file)
