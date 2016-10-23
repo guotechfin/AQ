@@ -14,6 +14,6 @@ class Crawler:
         self.aq.log("Start")
         FutureCode(self.aq).execute()
         FutureTrade(self.aq).execute()
-        #StockCode(self.aq).execute()
-        #StockTrade(self.aq).execute()
+        StockCode(self.aq).execute()
+        StockTrade(self.aq).execute()
         self.aq.log("Stop")

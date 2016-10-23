@@ -267,7 +267,7 @@ class StockTrade:
         return (o, h, l, c)
 
     def get_exchange(self, id, type):
-        if type == "index":
+        if type == "idx":
             if re.compile("^00").match(id) or re.compile("^99").match(id):
                 return "sh"
             elif re.compile("^39").match(id):
