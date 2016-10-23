@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+import time
+import re
+import collections
+import urllib.request
+import zipfile
+from html.parser import HTMLParser
+from mysql import connector
 
 class StockTrade:
 
@@ -7,111 +15,129 @@ class StockTrade:
         self.aq = aq
 
     def execute(self):
-        self.aq.log.info('AQ/Crawler/StockTrade Start')
+        self.aq.log('Start')
 
-        self.aq.log.info('AQ/Crawler/StockTrade Stop')
+        url = "http://www.tdx.com.cn/products/data/data/vipdoc/shlday.zip"
+        path = self.aq.WS_PATH + "crawler/sh/"
+        file = path + "sh.zip"
+        self.create_path(path)
+        self.download_file(url, file)
+        self.aq.log('Download Shanghai trade file')
+        self.unzip_file(path, file)
+        self.aq.log('Unzip Shanghai trade file')
 
-    def run(self):
-        path = self.config.getValue("dataPath")
+        url = "http://www.tdx.com.cn/products/data/data/vipdoc/szlday.zip"
+        path = path = self.aq.WS_PATH + "crawler/sz/"
+        file = path + "sz.zip"
+        self.create_path(path)
+        self.download_file(url, file)
+        self.aq.log('Download Shenzhen trade file')
+        self.unzip_file(path, file)
+        self.aq.log('Unzip Shenzhen trade file')
 
-        if (self.config.getValue("dataDownload")):
-            # Download and unzip Shanghai trade data
-            url = self.config.getValue("dataSHTradeLink")
-            file = path + os.sep + self.config.getValue("dataSHTradeFile")
-            Util().downloadFile(url, file)
-            Util().unzipFile(path, file)
+        # Create stock trade table
+        w_connect = connector.connect(host=self.aq.DB_HOST,
+                                      user=self.aq.DB_USR,
+                                      password=self.aq.DB_PWD,
+                                      database=self.aq.DB_NAME)
+        w_cursor = w_connect.cursor()
+        w_cursor.execute("""CREATE TABLE IF NOT EXISTS stock_trade(
+                            code VARCHAR(50) NOT NULL,
+                            datetime DATETIME NOT NULL,
+                            open DOUBLE NOT NULL,
+                            high DOUBLE NOT NULL,
+                            low DOUBLE NOT NULL,
+                            close DOUBLE NOT NULL,
+                            open_exdr DOUBLE NOT NULL,
+                            high_exdr DOUBLE NOT NULL,
+                            low_exdr DOUBLE NOT NULL,
+                            close_exdr DOUBLE NOT NULL,
+                            volume DOUBLE NOT NULL,
+                            amount DOUBLE NOT NULL,
+                            PRIMARY KEY(code,datetime));""")
+        w_connect.commit()
 
-            # Download and unzip Shenzhen trade data
-            url = self.config.getValue("dataSZTradeLink")
-            file = path + os.sep + self.config.getValue("dataSZTradeFile")
-            Util().downloadFile(url, file)
-            Util().unzipFile(path, file)
-
-        # Initialize table
-        wConnect = connector.connect(user=self.gconfig.getValue("dbUsr"), password=self.gconfig.getValue("dbPwd"), host=self.gconfig.getValue("dbHost"), database=self.gconfig.getValue("dbDatabase"))
-        wCursor = wConnect.cursor()
-        if (self.config.getValue("dbInit")):
-            wCursor.execute(self.config.getValue("dbInitTableDrop"))
-        wCursor.execute(self.config.getValue("dbInitTableCreate"))
-        wCursor.execute(self.config.getValue("dbInitTableStruct"))
-        wConnect.commit()
-
-        rConnect = connector.connect(user=self.gconfig.getValue("dbUsr"), password=self.gconfig.getValue("dbPwd"), host=self.gconfig.getValue("dbHost"), database=self.gconfig.getValue("dbDatabase"))
-        rCursor = rConnect.cursor()
-        rCursor.execute(self.config.getValue("dbReadID"))
+        r_connect = connector.connect(host=self.aq.DB_HOST,
+                                      user=self.aq.DB_USR,
+                                      password=self.aq.DB_PWD,
+                                      database=self.aq.DB_NAME)
+        r_cursor = r_connect.cursor()
+        r_cursor.execute("SELECT code, type, name FROM aq.stock_code;")
         results = []
-        for (id, type, name) in rCursor:
-            results.append({"id":id, "type":type, "name":name})
-        rCursor.close()
-        rConnect.close()
+        for (code, type, name) in r_cursor:
+            results.append((code, type, name))
+        r_cursor.close()
+        r_connect.close()
 
         count = 0
-        for result in results:
-            id = result["id"]
-            type = result["type"]
-            name = result["name"]
+        for (code, type, name) in results:
+            self.aq.log("Insert stock trade (" + code + ", " + name + ")")
 
-            self.log.printInfo("Trade Start " + id + " " + name)
-            # Load trade data
-            dayFile = open(self.config.getValue("dataPath") + os.sep + self.getExchange(id, type) + id + ".day", "rb").read()
-            length = len(dayFile)
+            day_file = open(path + self.get_exchange(code, type) + code + ".day", "rb").read()
+            length = len(day_file)
             index = 0
-            rawTrades = []
+            raw_trades = []
             while index < length:
-                d = time.strptime(str(int.from_bytes(dayFile[index:index+4], byteorder='little')), "%Y%m%d")
+                d = time.strptime(str(int.from_bytes(day_file[index:index + 4], byteorder='little')), "%Y%m%d")
                 if (type == "etf"):
-                    o = int.from_bytes(dayFile[index+4:index+8], byteorder='little')/1000.00
-                    h = int.from_bytes(dayFile[index+8:index+12], byteorder='little')/1000.00
-                    l = int.from_bytes(dayFile[index+12:index+16], byteorder='little')/1000.00
-                    c = int.from_bytes(dayFile[index+16:index+20], byteorder='little')/1000.00
+                    o = int.from_bytes(day_file[index + 4:index + 8], byteorder='little') / 1000.00
+                    h = int.from_bytes(day_file[index + 8:index + 12], byteorder='little') / 1000.00
+                    l = int.from_bytes(day_file[index + 12:index + 16], byteorder='little') / 1000.00
+                    c = int.from_bytes(day_file[index + 16:index + 20], byteorder='little') / 1000.00
                 else:
-                    o = int.from_bytes(dayFile[index+4:index+8], byteorder='little')/100.00
-                    h = int.from_bytes(dayFile[index+8:index+12], byteorder='little')/100.00
-                    l = int.from_bytes(dayFile[index+12:index+16], byteorder='little')/100.00
-                    c = int.from_bytes(dayFile[index+16:index+20], byteorder='little')/100.00
-                a = int.from_bytes(dayFile[index+20:index+24], byteorder='little')
-                v = int.from_bytes(dayFile[index+24:index+28], byteorder='little')
-                rawTrades = [{ "date":d, "open":o, "high":h, "low":l, "close":c, "amount":a, "volume":v }] + rawTrades
+                    o = int.from_bytes(day_file[index + 4:index + 8], byteorder='little') / 100.00
+                    h = int.from_bytes(day_file[index + 8:index + 12], byteorder='little') / 100.00
+                    l = int.from_bytes(day_file[index + 12:index + 16], byteorder='little') / 100.00
+                    c = int.from_bytes(day_file[index + 16:index + 20], byteorder='little') / 100.00
+                a = int.from_bytes(day_file[index + 20:index + 24], byteorder='little')
+                v = int.from_bytes(day_file[index + 24:index + 28], byteorder='little')
+                raw_trades = [{"datetime": d,
+                               "open": o,
+                               "high": h,
+                               "low": l,
+                               "close": c,
+                               "amount": a,
+                               "volume": v}] + raw_trades
                 index += 32
 
             # Download html
-            html = Util().dowloadFileContent(self.config.getValue("dataEXDRPref") + id + self.config.getValue("dataEXDRSuff"))
+            html = self.dowload_content("http://money.finance.sina.com.cn/corp/go.php/vISSUE_ShareBonus/stockid/" + code + ".phtml")
 
             # EXD
-            exdTable = Util().parseHTMLTable(html.decode("gbk"), "id", self.config.getValue("dataEXDTableID"))
+            exdr_table = self.parse_html_table(html.decode("gbk"), "id", "sharebonus_1")
             exd = {}
             skip = 0
-            for exdRow in exdTable[0]:
+            for exd_row in exdr_table[0]:
                 if skip < 3:
                     skip += 1
                     continue
 
-                if exdRow[0] == self.config.getValue("dataEXDRTableSkip"):
+                if exd_row[0] == "暂时没有数据！":
                     break
 
-                if exdRow[4] == self.config.getValue("dataEXDTableValid"):
-                    exd[exdRow[5]] = {"song":exdRow[1], "zhuan":exdRow[2], "xi":exdRow[3]}
+                if exd_row[4] == "实施":
+                    exd[exd_row[5]] = {"song": exd_row[1], "zhuan": exd_row[2], "xi": exd_row[3]}
 
-            #EXR
-            exrTable = Util().parseHTMLTable(html.decode("gbk"), "id", self.config.getValue("dataEXRTableID"))
+            # EXR
+            exr_table = self.parse_html_table(html.decode("gbk"), "id", "sharebonus_2")
             exr = {}
             skip = 0
-            for exrRow in exrTable[0]:
+            for exr_row in exr_table[0]:
                 if skip < 2:
                     skip += 1
                     continue
 
-                if exrRow[0] == self.config.getValue("dataEXDRTableSkip"):
+                if exr_row[0] == "暂时没有数据！":
                     break
 
-                exr[exrRow[4]] = {"gu":exrRow[1], "jia":exrRow[2]}
+                exr[exr_row[4]] = {"gu": exr_row[1], "jia": exr_row[2]}
 
             # EXDR
-            exdDates = set(exd.keys())
-            exrDates = set(exr.keys())
-            exdrDates = exdDates.union(exrDates)
+            exd_dates = set(exd.keys())
+            exr_dates = set(exr.keys())
+            exdr_dates = exd_dates.union(exr_dates)
             exdrs = {}
-            for date in exdrDates:
+            for date in exdr_dates:
                 (s, z, x, g, j) = (0, 0, 0, 0, 0)
                 if date in exd:
                     s = exd[date]["song"]
@@ -120,73 +146,104 @@ class StockTrade:
                 if date in exr:
                     g = exr[date]["gu"]
                     j = exr[date]["jia"]
-                exdrs[date] = {"song":s, "zhuan":z, "xi":x, "gu":g, "jia":j}
+                exdrs[date] = {"song": s, "zhuan": z, "xi": x, "gu": g, "jia": j}
             exdrs = collections.OrderedDict(reversed(sorted(exdrs.items())))
 
-            exdrTrades = []
-            for trade in rawTrades:
-                (o, h, l, c) = self.getEXDRPrice(type, trade["date"], (trade["open"], trade["high"], trade["low"], trade["close"]), exdrs)
-                exdrTrades.append({ "date":trade["date"], "exdr_open":o, "exdr_high":h, "exdr_low":l, "exdr_close":c })
+            exdr_trades = []
+            for trade in raw_trades:
+                (o, h, l, c) = self.get_exdr_price(type,
+                                                   trade["datetime"],
+                                                   (trade["open"], trade["high"], trade["low"], trade["close"]),
+                                                   exdrs)
+                exdr_trades.append({"datetime": trade["datetime"],
+                                    "open_exdr": o,
+                                    "high_exdr": h,
+                                    "low_exdr": l,
+                                    "close_exdr": c})
 
-            exdrPercent = []
-            isFirst = True
-            for trade in reversed(exdrTrades):
-                if isFirst:
+            is_first = True
+            for trade in reversed(exdr_trades):
+                if is_first:
                     (op, hp, lp, cp) = (0, 0, 0, 0)
-                    preo = trade["exdr_open"]
-                    preh = trade["exdr_high"]
-                    prel = trade["exdr_low"]
-                    prec = trade["exdr_close"]
-                    exdrPercent = [{ "date":d, "exdr_open_percent":op, "exdr_high_percent":hp, "exdr_low_percent":lp, "exdr_close_percent":cp }] + exdrPercent
-                    isFirst = False
+                    preo = trade["open_exdr"]
+                    preh = trade["high_exdr"]
+                    prel = trade["low_exdr"]
+                    prec = trade["close_exdr"]
+                    is_first = False
                 else:
-                    op = 0 if preo == 0 else (trade["exdr_open"]-preo)/preo
-                    hp = 0 if preh == 0 else (trade["exdr_high"]-preh)/preh
-                    lp = 0 if prel == 0 else (trade["exdr_low"]-prel)/prel
-                    cp = 0 if prec == 0 else (trade["exdr_close"]-prec)/prec
-                    preo = trade["exdr_open"]
-                    preh = trade["exdr_high"]
-                    prel = trade["exdr_low"]
-                    prec = trade["exdr_close"]
-                    exdrPercent = [{ "date":d, "exdr_open_percent":op, "exdr_high_percent":hp, "exdr_low_percent":lp, "exdr_close_percent":cp }] + exdrPercent
+                    op = 0 if preo == 0 else (trade["open_exdr"] - preo) / preo
+                    hp = 0 if preh == 0 else (trade["high_exdr"] - preh) / preh
+                    lp = 0 if prel == 0 else (trade["low_exdr"] - prel) / prel
+                    cp = 0 if prec == 0 else (trade["close_exdr"] - prec) / prec
+                    preo = trade["open_exdr"]
+                    preh = trade["high_exdr"]
+                    prel = trade["low_exdr"]
+                    prec = trade["close_exdr"]
 
-            if len(rawTrades) != len(exdrTrades):
+            if len(raw_trades) != len(exdr_trades):
                 raise ValueError("Raw trade length and EXDR trade length are mismatch")
 
-            if len(rawTrades) != len(exdrPercent):
-                raise ValueError("Raw trade length and EXDR percent length are mismatch")
-
-            for index, trade in enumerate(rawTrades):
+            for index, trade in enumerate(raw_trades):
                 param = []
-                param.append(id)
-                param.append(trade["date"])
+                param.append(code)
+                param.append(trade["datetime"])
                 param.append(trade["open"])
                 param.append(trade["high"])
                 param.append(trade["low"])
                 param.append(trade["close"])
+                param.append(exdr_trades[index]["open_exdr"])
+                param.append(exdr_trades[index]["high_exdr"])
+                param.append(exdr_trades[index]["low_exdr"])
+                param.append(exdr_trades[index]["close_exdr"])
                 param.append(trade["volume"])
                 param.append(trade["amount"])
-                param.append(exdrTrades[index]["exdr_open"])
-                param.append(exdrTrades[index]["exdr_high"])
-                param.append(exdrTrades[index]["exdr_low"])
-                param.append(exdrTrades[index]["exdr_close"])
-                param.append(exdrPercent[index]["exdr_open_percent"])
-                param.append(exdrPercent[index]["exdr_high_percent"])
-                param.append(exdrPercent[index]["exdr_low_percent"])
-                param.append(exdrPercent[index]["exdr_close_percent"])
-                param.append(id)
-                param.append(trade["date"])
-                wCursor.execute(self.config.getValue("dbWrite"), tuple(param))
-                wConnect.commit()
+                param.append(code)
+                param.append(trade["datetime"])
+                w_cursor.execute("""INSERT INTO stock_trade VALUES
+                                 (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
+                                 code=%s,datetime=%s;""", tuple(param))
+                w_connect.commit()
 
             count += 1
-            self.log.printInfo("Trade Stop " + id + " " + name + " (Count=" + str(count) + ")")
 
-        wCursor.close()
-        wConnect.close()
+        w_cursor.close()
+        w_connect.close()
 
+        self.aq.log('Stop')
 
-    def getEXDRPrice(self, type, date, price, exdrs):
+    def create_path(self, path):
+        if os.path.isdir(path) == False:
+            os.mkdir(path)
+
+    def download_file(self, url, file):
+        attempts = 3
+        while attempts >= 0:
+            try:
+                urllib.request.urlretrieve(url, file)
+                break
+            except urllib.error.URLError:
+                attempts -= 1
+
+    def dowload_content(self, url):
+        attempts = 3
+        while attempts >= 0:
+            try:
+                content = urllib.request.urlopen(url).read()
+                break
+            except urllib.error.URLError:
+                attempts -= 1
+        return content
+
+    def unzip_file(self, path, file):
+        zipfile.ZipFile(file).extractall(path)
+
+    def parse_html_table(self, html, name, value):
+        htp = HTMLTableParser(name, value)
+        htp.feed(html)
+        htp.close()
+        return htp.getTables()
+
+    def get_exdr_price(self, type, date, price, exdrs):
         (o, h, l, c) = (price[0], price[1], price[2], price[3])
 
         if (type != 'stock'):
@@ -210,7 +267,7 @@ class StockTrade:
                 break
         return (o, h, l, c)
 
-    def getExchange(self, id, type):
+    def get_exchange(self, id, type):
         if type == "index":
             if re.compile("^00").match(id) or re.compile("^99").match(id):
                 return "sh"
@@ -234,3 +291,61 @@ class StockTrade:
                 raise ValueError("stock id isn't correct - " + id)
         else:
             raise ValueError("type isn't correct - " + type)
+
+class HTMLTableParser(HTMLParser):
+    def __init__(self, name = None, value = None):
+        HTMLParser.__init__(self)
+        self._data_separator = ' '
+        self._name = name
+        self._value = value
+        self._in_table = False
+        self._in_td = False
+        self._in_th = False
+        self._current_table = []
+        self._current_row = []
+        self._current_cell = []
+        self.tables = []
+
+    def getTables(self):
+        return self.tables
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'table':
+            if self._name != None and self._value != None:
+                for (name, value) in attrs:
+                    if name == self._name and value == self._value:
+                        self._in_table = True
+                        break
+            else:
+                self._in_table = True
+
+        if tag == 'td':
+            if self._in_table == True:
+                self._in_td = True
+        if tag == 'th':
+            if self._in_table == True:
+                self._in_th = True
+
+    def handle_data(self, data):
+        if self._in_td or self._in_th:
+            self._current_cell.append(data.strip())
+
+    def handle_endtag(self, tag):
+        if self._in_table:
+            if tag in ['td', 'th']:
+                final_cell = self._data_separator.join(self._current_cell).strip()
+                self._current_row.append(final_cell)
+                self._current_cell = []
+            elif tag == 'tr':
+                self._current_table.append(self._current_row)
+                self._current_row = []
+            elif tag == 'table':
+                self.tables.append(self._current_table)
+                self._current_table = []
+
+        if tag == 'td':
+            self._in_td = False
+        elif tag == 'th':
+            self._in_th = False
+        elif tag == 'table':
+            self._in_table = False

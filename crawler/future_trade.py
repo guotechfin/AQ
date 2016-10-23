@@ -21,7 +21,6 @@ class FutureTrade:
                                     password=self.aq.DB_PWD,
                                     database=self.aq.DB_NAME)
         w_cursor = w_connect.cursor()
-
         w_cursor.execute("""CREATE TABLE IF NOT EXISTS future_trade(
                             code VARCHAR(50) NOT NULL,
                             type VARCHAR(50) NOT NULL,
@@ -45,10 +44,10 @@ class FutureTrade:
                                     password=self.aq.DB_PWD,
                                     database=self.aq.DB_NAME)
         r_cursor = r_connect.cursor()
-        r_cursor.execute("SELECT future_code.code, future_code.name FROM aq.future_code;")
-        codes = []
+        r_cursor.execute("SELECT code, name FROM aq.future_code;")
+        results = []
         for (code, name) in r_cursor:
-            codes.append((code, name))
+            results.append((code, name))
         r_cursor.close()
         r_connect.close()
 
@@ -63,7 +62,7 @@ class FutureTrade:
         lc1_files = [lc1_file for lc1_file in os.listdir(TDX_LC1_PATH) if
                      os.path.isfile(os.path.join(TDX_LC1_PATH, lc1_file))]
 
-        for (code, name) in codes:
+        for (code, name) in results:
             day_file = self._find_tdx_file(code, "L8.day", day_files)
             self._day_to_db(code, "d", TDX_DAY_PATH + day_file)
             self.aq.log("Insert day trade (" + code + ", " + name + ")")

@@ -1,7 +1,5 @@
+__pycache__
+sh/
+sz/
 .*
 *.log
-__pycache__
-1/
-5/
-d/
-zzz/
