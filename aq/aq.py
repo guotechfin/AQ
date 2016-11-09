@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import os
 import inspect
 import logging
@@ -42,10 +41,12 @@ class AQ:
         self.logger.info((" %s [%s::%s][%s:%i]") % (msg, class_name, func_name, file_name, line_number))
 
     def execute(self):
-        aq.log("Start")
-        crawler = Crawler(aq)
-        crawler.execute()
-        aq.log("Stop")
+        self.log("Start")
+        #crawler = Crawler(self)
+        #crawler.execute()
+        modeler = Modeler(self)
+        modeler.execute()
+        self.log("Stop")
 
 if __name__ == '__main__':
     aq = AQ()

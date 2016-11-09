@@ -3,7 +3,6 @@
 import csv
 from mysql import connector
 
-
 class FutureCode:
 
     def __init__(self, aq):
