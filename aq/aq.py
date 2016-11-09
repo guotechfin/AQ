@@ -6,7 +6,6 @@ import inspect
 import logging
 
 from crawler.crawler import Crawler
-from explorer.explorer import Explorer
 from modeler.modeler import Modeler
 
 class AQ:
