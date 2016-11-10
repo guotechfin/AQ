@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from modeler.st_adf import ST_ADF
+from modeler.stats_test import StatsTest
 
 class Modeler:
 
@@ -9,5 +9,7 @@ class Modeler:
 
     def execute(self):
         self.aq.log("Start")
-        ST_ADF(self.aq).execute()
+
+        StatsTest(self.aq).execute()
+
         self.aq.log("Stop")

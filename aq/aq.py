@@ -42,10 +42,12 @@ class AQ:
 
     def execute(self):
         self.log("Start")
-        #crawler = Crawler(self)
-        #crawler.execute()
-        modeler = Modeler(self)
-        modeler.execute()
+        if (not True):
+            crawler = Crawler(self)
+            crawler.execute()
+        if (True):
+            modeler = Modeler(self)
+            modeler.execute()
         self.log("Stop")
 
 if __name__ == '__main__':

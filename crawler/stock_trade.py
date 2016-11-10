@@ -17,7 +17,7 @@ class StockTrade:
     def execute(self):
         self.aq.log('Start')
 
-        path = self.aq.WS_PATH + "crawler/data/"
+        path = self.aq.WS_PATH + "crawler/tmp/"
         self.create_path(path)
 
         url = "http://www.tdx.com.cn/products/data/data/vipdoc/shlday.zip"
