@@ -15,12 +15,7 @@ class StatsTest:
         # Create the range of lag values
         lags = range(2, 100)
         # Calculate the array of the variances of the lagged differences
-        tau = []
-        for lag in lags:
-            s1 = subtract(ts[lag:], ts[:-lag])
-            s2 = std(s1)
-            s3 = sqrt(s2)
-            tau.append(s3)
+        tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
         # Use a linear fit to estimate the Hurst Exponent
         poly = polyfit(log(lags), log(tau), 1)
         # Return the Hurst exponent from the polyfit output
@@ -30,17 +25,15 @@ class StatsTest:
         self.aq.log("Start")
 
         code = "P"
-        type = "5"
+        type = "d"
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
         data = pd.read_sql("""SELECT datetime, open, high, low, close, volume, oi FROM future_trade
                             WHERE code='%s' AND type='%s' """ % (code, type), con=mysql_connector)
         mysql_connector.close()
 
-        close_rtn = (data.close.diff()/data.close.shift(1))[1:]
-        print(ts.adfuller(close_rtn, 1))
-        print(ts.adfuller(data.volume, 1))
+        data["rtn"] = (data.close.diff()/data.close.shift(1))
+        he = self.hurst(data.close)
 
-        print(self.hurst(log(close_rtn.values.tolist())))
 
         self.aq.log("Stop")
