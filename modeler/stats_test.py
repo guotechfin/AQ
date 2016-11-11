@@ -2,24 +2,11 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 from mysql import connector
-from numpy import cumsum, log, polyfit, sqrt, std, subtract
-import statsmodels.tsa.stattools as ts
 
 class StatsTest:
 
     def __init__(self, aq):
         self.aq = aq
-
-    def hurst(self, ts):
-        """Returns the Hurst Exponent of the time series vector ts"""
-        # Create the range of lag values
-        lags = range(2, 100)
-        # Calculate the array of the variances of the lagged differences
-        tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
-        # Use a linear fit to estimate the Hurst Exponent
-        poly = polyfit(log(lags), log(tau), 1)
-        # Return the Hurst exponent from the polyfit output
-        return poly[0] * 2.0
 
     def execute(self):
         self.aq.log("Start")
