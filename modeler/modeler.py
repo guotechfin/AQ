@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from modeler.stats_test import StatsTest
+from modeler.statstest import StatsTest
 
 class Modeler:
 
