@@ -70,9 +70,9 @@ class FutureTrade:
             self._lc_to_db(code, "5", TDX_LC5_PATH + lc5_file)
             self.aq.log("Insert 5m trade (" + code + ", " + name + ")")
 
-            #lc1_file = self._find_tdx_file(code, "L8.lc1", lc1_files)
-            #self._lc_to_db(code, "1", TDX_LC1_PATH + lc1_file)
-            #self.aq.log("Insert 1m trade (" + code + ", " + name + ")")
+            lc1_file = self._find_tdx_file(code, "L8.lc1", lc1_files)
+            self._lc_to_db(code, "1", TDX_LC1_PATH + lc1_file)
+            self.aq.log("Insert 1m trade (" + code + ", " + name + ")")
 
         self.aq.log('Stop')
 
