@@ -3,7 +3,8 @@
 import pandas as pd
 from mysql import connector
 
-class StatsTest:
+
+class CADF:
 
     def __init__(self, aq):
         self.aq = aq
