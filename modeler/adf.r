@@ -12,7 +12,7 @@ codes <- dbGetQuery(connect, paste0("SELECT code FROM future_code"))
 ################################################################################
 
 for (code in codes$code) {
-  data <- dbGetQuery(connect, paste0("SELECT datetime, open, high, low, close, volume, oi FROM future_trade WHERE code='", code, "' AND type='1'"))
+  data <- dbGetQuery(connect, paste0("SELECT datetime, open, high, low, close, volume, oi FROM future_trade WHERE code='", code, "' AND type='5'"))
   data$datetime <- as.POSIXlt(data$datetime)
   data$rtn <- c(0, diff(data$c))/data$c
   data <- xts(data[,-1], order.by=data[,1])
