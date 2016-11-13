@@ -2,7 +2,14 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 from mysql import connector
+import numpy as np
+import pandas as pd
+import datetime
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
+import pprint
+import statsmodels.tsa.stattools as ts
 
 class CADF:
 
@@ -21,7 +28,5 @@ class CADF:
         mysql_connector.close()
 
         data["rtn"] = (data.close.diff()/data.close.shift(1))
-        he = self.hurst(data.close)
-
 
         self.aq.log("Stop")

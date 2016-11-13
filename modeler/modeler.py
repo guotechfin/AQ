@@ -12,6 +12,6 @@ class Modeler:
         self.aq.log("Start")
 
         ADF(self.aq).execute()
-        CADF(self.aq).execute()
+        #CADF(self.aq).execute()
 
         self.aq.log("Stop")
