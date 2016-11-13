@@ -5,6 +5,7 @@ import inspect
 import logging
 
 from crawler.crawler import Crawler
+from explorer.explorer import Explorer
 from modeler.modeler import Modeler
 
 class AQ:
@@ -46,8 +47,8 @@ class AQ:
             crawler = Crawler(self)
             crawler.execute()
         if (True):
-            modeler = Modeler(self)
-            modeler.execute()
+            explorer = Explorer(self)
+            explorer.execute()
         self.log("Stop")
 
 if __name__ == '__main__':

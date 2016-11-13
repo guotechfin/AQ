@@ -12,7 +12,8 @@ codes <- dbGetQuery(connect, paste0("SELECT code FROM future_code"))
 ################################################################################
 
 for (code in codes$code) {
-  data <- dbGetQuery(connect, paste0("SELECT datetime, open, high, low, close, volume, oi FROM future_trade WHERE code='", code, "' AND type='5'"))
+  data <- dbGetQuery(connect, paste0("SELECT datetime, open, high, low, close, volume, oi FROM future_trade 
+                                      WHERE code='", code, "' AND type='5'"))
   data$datetime <- as.POSIXlt(data$datetime)
   data$rtn <- c(0, diff(data$c))/data$c
   data <- xts(data[,-1], order.by=data[,1])
@@ -20,7 +21,7 @@ for (code in codes$code) {
     {
       print("##############################")
       adf_test <- adf.test(data$rtn)
-      print(paste0(code, ": ADF=", adf_test$statistic, ", p-value=", adf_test$p.value))
+      print(paste0(code, ": ADF=", adf_test$statistic, ", lag_order=", adf_test$parameter, ", p-value=", adf_test$p.value))
     }, error = function(e) {
       print(paste("Error ", code)) 
     })
