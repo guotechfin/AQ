@@ -19,6 +19,7 @@ class ADF:
                                WHERE code='%s' AND type='%s' """ % (row[1], 5), con=mysql_connector)
             adf = ts.adfuller((data.close.diff() / data.close.shift(1))[1:], 50)
             self.aq.log("%s: ADF=%f, Lag=%d, p-value=%.10f" % (row[1], adf[0], adf[2], adf[1]))
+            self.aq.log("   %s" % (adf[4]))
         mysql_connector.close()
 
         self.aq.log("Stop")
