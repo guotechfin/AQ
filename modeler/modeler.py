@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from explorer.adf import ADF
-from explorer.cadf import CADF
+from modeler.adf import ADF
+from modeler.cadf import CADF
 
 class Modeler:
 
