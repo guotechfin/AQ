@@ -12,8 +12,8 @@ class Explorer:
     def execute(self):
         self.aq.log("Start")
 
-        ADF(self.aq).execute()
-        CADF(self.aq).execute()
+        #ADF(self.aq).execute()
+        #CADF(self.aq).execute()
         ML(self.aq).execute()
 
         self.aq.log("Stop")

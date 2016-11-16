@@ -9,7 +9,4 @@ class Modeler:
     def execute(self):
         self.aq.log("Start")
 
-
-        # CADF(self.aq).execute()
-
         self.aq.log("Stop")
