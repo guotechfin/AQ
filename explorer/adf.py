@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import pandas as pd
 from mysql import connector
+import pandas as pd
 import statsmodels.tsa.stattools as ts
 
 class ADF:
