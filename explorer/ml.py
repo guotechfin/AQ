@@ -4,6 +4,7 @@ from mysql import connector
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
 
 class ML:
 
@@ -19,18 +20,25 @@ class ML:
 
         for row in code.itertuples():
             data = pd.read_sql("""SELECT close, volume FROM future_trade
-                               WHERE code='%s' AND type='%s' """ % (row[1], "5"), con=mysql_connector)
+                               WHERE code='%s' AND type='%s' """ % (row[1], "d"), con=mysql_connector)
             data["chg"] = data.close.diff()
             data.iloc[0, 2] = 0
 
             rtn_lag = 10
             vol_lag = 10
             k_fold = 10
-            algo = "Logistic Regression"
-            self.aq.log("Code = %s, Algo = %s" % (row[1], algo))
-            hit_rate = self.cross_check(algo, k_fold,
+
+            ml_algo = "Logistic Regression"
+            self.aq.log("Code = %s, ML Algorithm = %s" % (row[1], ml_algo))
+            hit_rate = self.cross_check(ml_algo, k_fold,
                                         self.get_y(data, rtn_lag, vol_lag), self.get_X(data, rtn_lag, vol_lag))
             self.aq.log("Average Hit Rate = %g%s" % (hit_rate*100, "%"))
+
+            ml_algo = "Navie Bayes"
+            self.aq.log("Code = %s, ML Algorithm = %s" % (row[1], ml_algo))
+            hit_rate = self.cross_check(ml_algo, k_fold,
+                                        self.get_y(data, rtn_lag, vol_lag), self.get_X(data, rtn_lag, vol_lag))
+            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         mysql_connector.close()
 
@@ -66,6 +74,8 @@ class ML:
             y_train = pd.concat([y[0:start - 1], y[stop:]])
             if (algo == "Logistic Regression"):
                 model = LogisticRegression()
+            elif(algo == "Navie Bayes"):
+                model = GaussianNB()
             else:
                 model = None
             model.fit(X_train, y_train)
