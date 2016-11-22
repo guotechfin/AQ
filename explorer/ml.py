@@ -16,7 +16,9 @@ class ML:
 
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
-        code = pd.read_sql("""SELECT code FROM aq.future_code;""", con=mysql_connector)
+        code = pd.read_sql("""SELECT code FROM aq.future_code
+                            WHERE code='P' OR code='Y' OR code='RB' OR code='I' OR code='M' OR code='RM';""",
+                               con=mysql_connector)
 
         for row in code.itertuples():
             data = pd.read_sql("""SELECT close, volume FROM future_trade
