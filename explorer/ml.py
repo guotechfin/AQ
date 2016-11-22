@@ -16,11 +16,11 @@ class ML:
 
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
-        code = pd.read_sql("""SELECT code FROM aq.future_code WHERE code='RB';""", con=mysql_connector)
+        code = pd.read_sql("""SELECT code FROM aq.future_code;""", con=mysql_connector)
 
         for row in code.itertuples():
             data = pd.read_sql("""SELECT close, volume FROM future_trade
-                               WHERE code='%s' AND type='%s' """ % (row[1], "d"), con=mysql_connector)
+                               WHERE code='%s' AND type='%s' """ % (row[1], "5"), con=mysql_connector)
             data["chg"] = data.close.diff()
             data.iloc[0, 2] = 0
 
