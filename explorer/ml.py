@@ -62,7 +62,7 @@ class ML:
         vol_lag = 10
         k_fold = 10
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         model = LogisticRegression()
         self.aq.log("Code = %s" % code)
@@ -70,7 +70,7 @@ class ML:
         hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         model = GaussianNB()
         self.aq.log("Code = %s" % code)
@@ -78,7 +78,7 @@ class ML:
         hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         model = KNeighborsClassifier()
         self.aq.log("Code = %s" % code)
@@ -86,7 +86,7 @@ class ML:
         hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         model = DecisionTreeClassifier()
         self.aq.log("Code = %s" % code)
@@ -94,7 +94,7 @@ class ML:
         hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         model = SVC()
         self.aq.log("Code = %s" % code)
@@ -102,7 +102,7 @@ class ML:
         hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
-        self.aq.log("##########")
+        self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         mysql_connector.close()
 

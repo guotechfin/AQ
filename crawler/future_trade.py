@@ -58,8 +58,8 @@ class FutureTrade:
                      if os.path.isfile(os.path.join(TDX_DAY_PATH, day_file))]
         lc5_files = [lc5_file for lc5_file in os.listdir(TDX_LC5_PATH) if
                      os.path.isfile(os.path.join(TDX_LC5_PATH, lc5_file))]
-        lc1_files = [lc1_file for lc1_file in os.listdir(TDX_LC1_PATH) if
-                     os.path.isfile(os.path.join(TDX_LC1_PATH, lc1_file))]
+        #lc1_files = [lc1_file for lc1_file in os.listdir(TDX_LC1_PATH) if
+        #             os.path.isfile(os.path.join(TDX_LC1_PATH, lc1_file))]
 
         for (code, name) in results:
             day_file = self._find_tdx_file(code, "L8.day", day_files)
@@ -70,9 +70,9 @@ class FutureTrade:
             self._lc_to_db(code, "5", TDX_LC5_PATH + lc5_file)
             self.aq.log("Insert 5m trade (" + code + ", " + name + ")")
 
-            lc1_file = self._find_tdx_file(code, "L8.lc1", lc1_files)
-            self._lc_to_db(code, "1", TDX_LC1_PATH + lc1_file)
-            self.aq.log("Insert 1m trade (" + code + ", " + name + ")")
+            #lc1_file = self._find_tdx_file(code, "L8.lc1", lc1_files)
+            #self._lc_to_db(code, "1", TDX_LC1_PATH + lc1_file)
+            #self.aq.log("Insert 1m trade (" + code + ", " + name + ")")
 
         self.aq.log('Stop')
 
