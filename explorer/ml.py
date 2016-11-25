@@ -14,11 +14,11 @@ class ML:
     def __init__(self, aq):
         self.aq = aq
 
-    def get_y(self, data, rtn_lag, vol_lag):
-        y = data.chg[max(rtn_lag, vol_lag):]
-        y.index = range(len(y))
-        y = y.apply(lambda x: x > 0)
-        return y
+    def get_Y(self, data, rtn_lag, vol_lag):
+        Y = data.chg[max(rtn_lag, vol_lag):]
+        Y.index = range(len(Y))
+        Y = Y.apply(lambda x: x > 0)
+        return Y
 
     def get_X(self, data, rtn_lag, vol_lag):
         X = pd.DataFrame(columns=range(rtn_lag + vol_lag))
@@ -30,20 +30,20 @@ class ML:
                 X = X.append(xrow, ignore_index=True)
         return X
 
-    def cross_check(self, model, k_fold, X, y):
+    def cross_check(self, model, k_fold, X, Y):
         hit_rate_sum = 0
-        stride = round(len(y) / k_fold)
+        stride = round(len(Y) / k_fold)
         for i in range(0, k_fold):
             start = i * stride
             stop = i * stride + stride - 1
             if (i == k_fold - 1):
-                stop = len(y)
+                stop = len(Y)
             X_test = X[start:stop]
-            y_test = y[start:stop]
+            Y_test = Y[start:stop]
             X_train = pd.concat([X[0:start - 1], X[stop:]])
-            y_train = pd.concat([y[0:start - 1], y[stop:]])
-            model.fit(X_train, y_train)
-            hit_rate = np.sum(model.predict(X_test) == y_test) / (stop-start)
+            Y_train = pd.concat([Y[0:start - 1], Y[stop:]])
+            model.fit(X_train, Y_train)
+            hit_rate = np.sum(model.predict(X_test) == Y_test) / (stop-start)
             hit_rate_sum += hit_rate
             self.aq.log("  k_fold=%s, %.2f%s" % (i+1, hit_rate*100 , "%"))
 
@@ -67,7 +67,7 @@ class ML:
         model = LogisticRegression()
         self.aq.log("Code = %s" % code)
         self.aq.log("Logistic Regression")
-        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
+        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_Y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -75,7 +75,7 @@ class ML:
         model = GaussianNB()
         self.aq.log("Code = %s" % code)
         self.aq.log("Naive Bayes")
-        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
+        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_Y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -83,7 +83,7 @@ class ML:
         model = KNeighborsClassifier()
         self.aq.log("Code = %s" % code)
         self.aq.log("K Neighbors")
-        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
+        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_Y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -91,7 +91,7 @@ class ML:
         model = DecisionTreeClassifier()
         self.aq.log("Code = %s" % code)
         self.aq.log("Decision Tree")
-        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
+        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_Y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -99,7 +99,7 @@ class ML:
         model = SVC()
         self.aq.log("Code = %s" % code)
         self.aq.log("Support Vector Machine")
-        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_y(data, rtn_lag, vol_lag))
+        hit_rate = self.cross_check(model, k_fold, self.get_X(data, rtn_lag, vol_lag), self.get_Y(data, rtn_lag, vol_lag))
         self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
 
         self.aq.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
