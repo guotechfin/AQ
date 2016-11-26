@@ -4,6 +4,7 @@ from mysql import connector
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -16,29 +17,32 @@ class ML:
         self.aq = aq
 
     def get_data(self, code, type):
-        mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
-                                            user=self.aq.DB_USR, password=self.aq.DB_PWD)
-        data = pd.read_sql("""SELECT close, volume FROM future_trade WHERE code='%s' AND type='%s' """ % (code, type),
-                           con=mysql_connector)
-        data["change"] = data.close.diff()/data.close.shift(1)
-        data.iloc[0, 2] = 0
-        data = pd.DataFrame(preprocessing.normalize(data))
+        mysql_connector = connector.connect(host="127.0.0.1", database="aq", user="root", password="!QAZ2wsx#EDC")
+        data = pd.read_sql("""SELECT close, high-low as hl, close-open as oc FROM future_trade
+                            WHERE code='%s' AND type='%s' """ % (code, type), con=mysql_connector)
+        data_1 = data.close.diff()
+        data_1[0] = 0
+        data_2 = data.hl
+        data_3 = data.oc
+        data = pd.DataFrame({"data_1": data_1, "data_2": data_2, "data_3": data_3})
+        data = pd.DataFrame(preprocessing.normalize(data), columns=["data_1", "data_2", "data_3"])
         mysql_connector.close()
         return data
 
-    def get_Y(self, data, rtn_lag, vol_lag):
-        Y = data.iloc[max(rtn_lag, vol_lag):, 2]
+    def get_Y(self, data, lag_1, lag_2, lag_3):
+        Y = data.data_1[max(lag_1, lag_2, lag_3):]
         Y.index = range(len(Y))
-        Y = Y.apply(lambda x: x > 0)
+        Y = Y.apply(lambda x: x >= 0)
         return Y
 
-    def get_X(self, data, rtn_lag, vol_lag):
-        X = pd.DataFrame(columns=range(rtn_lag + vol_lag))
+    def get_X(self, data, lag_1, lag_2, lag_3):
+        X = pd.DataFrame(columns=range(lag_1 + lag_2 + lag_3))
         for idx, row in data.iterrows():
-            if idx >= rtn_lag and idx >= vol_lag:
-                vol = data.iloc[(idx - vol_lag):idx, 1]
-                rtn = data.iloc[(idx - rtn_lag):idx, 2]
-                xrow = pd.concat([rtn, vol], ignore_index=True)
+            if idx >= lag_1 and idx >= lag_2 and idx >= lag_3:
+                data_1 = data.iloc[(idx - lag_1):idx, 0]
+                data_2 = data.iloc[(idx - lag_2):idx, 1]
+                data_3 = data.iloc[(idx - lag_3):idx, 2]
+                xrow = pd.concat([data_1, data_2, data_3], ignore_index=True)
                 X = X.append(xrow, ignore_index=True)
         return X
 
@@ -61,111 +65,66 @@ class ML:
             model.fit(X_train, Y_train)
             hit_rate = np.sum(model.predict(X_test) == Y_test) / (stop - start)
             hit_rate_sum += hit_rate
-            self.aq.log("  k_fold=%s, %.2f%s, start=%d, stop=%d, test_len=%d, train_len=%d" %
-                  (i + 1, hit_rate * 100, "%", start, stop, len(Y_test), len(Y_train)))
+            #print("  k_fold=%s, %.2f%s, start=%d, stop=%d, test_len=%d, train_len=%d" %
+            #         (i+1, hit_rate*100 , "%", start, stop, len(Y_test), len(Y_train)))
         return hit_rate_sum / k_fold
 
-    def ml(self, code, type, algo=0):
+    def ml(self, code, type, lags, k_fold):
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
         data = self.get_data(code, type)
 
-        rtn_lag = 10
-        vol_lag = 10
-        k_fold = 20
-        X = self.get_X(data, rtn_lag, vol_lag)
-        Y = self.get_Y(data, rtn_lag, vol_lag)
+        lag_1 = lags[0]
+        lag_2 = lags[1]
+        lag_3 = lags[2]
 
-        if (algo == 1):
-            self.aq.log("################################################################################")
-            model = LogisticRegression()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Logistic Regression")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        X = self.get_X(data, lag_1, lag_2, lag_3)
+        Y = self.get_Y(data, lag_1, lag_2, lag_3)
 
-        elif (algo == 2):
-            self.aq.log("################################################################################")
-            model = GaussianNB()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Naive Bayes")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("Code = %s" % code)
+        model = ExtraTreesClassifier()
+        model.fit(X, Y)
+        print(model.feature_importances_)
+        print("")
 
-        elif (algo == 3):
-            self.aq.log("################################################################################")
-            model = KNeighborsClassifier()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("K Neighbors")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("Logistic Regression")
+        model = LogisticRegression()
+        hit_rate = self.cross_check(model, k_fold, X, Y)
+        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        print(" ")
 
-        elif (algo == 4):
-            self.aq.log("################################################################################")
-            model = DecisionTreeClassifier()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Decision Tree")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("Naive Bayes")
+        model = GaussianNB()
+        hit_rate = self.cross_check(model, k_fold, X, Y)
+        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        print("")
 
-        elif (algo == 5):
-            self.aq.log("################################################################################")
-            model = SVC()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Support Vector Machine")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
-        else:
-            self.aq.log("################################################################################")
-            model = LogisticRegression()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Logistic Regression")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("K Neighbors")
+        model = KNeighborsClassifier()
+        hit_rate = self.cross_check(model, k_fold, X, Y)
+        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        print("")
 
-            self.aq.log("################################################################################")
-            model = GaussianNB()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Naive Bayes")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("Decision Tree")
+        model = DecisionTreeClassifier()
+        hit_rate = self.cross_check(model, k_fold, X, Y)
+        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        print("")
 
-            self.aq.log("################################################################################")
-            model = KNeighborsClassifier()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("K Neighbors")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
-
-            self.aq.log("################################################################################")
-            model = DecisionTreeClassifier()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Decision Tree")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
-
-            self.aq.log("################################################################################")
-            model = SVC()
-            self.aq.log("Code = %s" % code)
-            self.aq.log("Support Vector Machine")
-            hit_rate = self.cross_check(model, k_fold, X, Y)
-            self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-            self.aq.log("################################################################################")
+        print("Support Vector Machine")
+        model = SVC()
+        hit_rate = self.cross_check(model, k_fold, X, Y)
+        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        print("")
 
         mysql_connector.close()
 
     def execute(self):
         self.aq.log("Start")
 
-        self.ml("P", "5")
+        self.ml("I", "1", [2, 2, 2], 20)
+        self.ml("I", "1", [3, 3, 3], 20)
+        self.ml("I", "1", [4, 4, 4], 20)
+        self.ml("I", "1", [5, 5, 5], 20)
 
         self.aq.log("Stop")
