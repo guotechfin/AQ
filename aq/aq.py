@@ -43,7 +43,7 @@ class AQ:
 
     def execute(self):
         self.log("Start")
-        if (True):
+        if (not True):
             crawler = Crawler(self)
             crawler.execute()
         if (True):

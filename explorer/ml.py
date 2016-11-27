@@ -65,13 +65,16 @@ class ML:
             model.fit(X_train, Y_train)
             hit_rate = np.sum(model.predict(X_test) == Y_test) / (stop - start)
             hit_rate_sum += hit_rate
-            #print("  k_fold=%s, %.2f%s, start=%d, stop=%d, test_len=%d, train_len=%d" %
-            #         (i+1, hit_rate*100 , "%", start, stop, len(Y_test), len(Y_train)))
+            self.aq.log("  k_fold=%s, %.2f%s, start=%d, stop=%d, test_len=%d, train_len=%d" %
+                           (i+1, hit_rate*100 , "%", start, stop, len(Y_test), len(Y_train)))
         return hit_rate_sum / k_fold
 
     def ml(self, code, type, lags, k_fold):
+        self.aq.log("Code=%s, Type=%s, lags=%s, k_fold=%s" % (code, type, lags, k_fold))
+
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
+
         data = self.get_data(code, type)
 
         lag_1 = lags[0]
@@ -81,41 +84,40 @@ class ML:
         X = self.get_X(data, lag_1, lag_2, lag_3)
         Y = self.get_Y(data, lag_1, lag_2, lag_3)
 
-        print("Code = %s" % code)
         model = ExtraTreesClassifier()
         model.fit(X, Y)
-        print(model.feature_importances_)
-        print("")
+        self.aq.log(model.feature_importances_)
+        self.aq.log("")
 
-        print("Logistic Regression")
+        self.aq.log("Logistic Regression")
         model = LogisticRegression()
         hit_rate = self.cross_check(model, k_fold, X, Y)
-        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-        print(" ")
+        self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        self.aq.log(" ")
 
-        print("Naive Bayes")
+        self.aq.log("Naive Bayes")
         model = GaussianNB()
         hit_rate = self.cross_check(model, k_fold, X, Y)
-        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-        print("")
+        self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        self.aq.log("")
 
-        print("K Neighbors")
+        self.aq.log("K Neighbors")
         model = KNeighborsClassifier()
         hit_rate = self.cross_check(model, k_fold, X, Y)
-        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-        print("")
+        self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        self.aq.log("")
 
-        print("Decision Tree")
+        self.aq.log("Decision Tree")
         model = DecisionTreeClassifier()
         hit_rate = self.cross_check(model, k_fold, X, Y)
-        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-        print("")
+        self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        self.aq.log("")
 
-        print("Support Vector Machine")
+        self.aq.log("Support Vector Machine")
         model = SVC()
         hit_rate = self.cross_check(model, k_fold, X, Y)
-        print("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
-        print("")
+        self.aq.log("Average Hit Rate = %g%s" % (hit_rate * 100, "%"))
+        self.aq.log("")
 
         mysql_connector.close()
 
