@@ -55,15 +55,67 @@ class Classification:
         scores = cross_val_score(model, X, y, cv=k_fold)
         self.aq.log("Scores Mean: %s\n" % scores.mean())
 
+    def long_validate(self, code, type, model, lag, train_len, test_len):
+        self.aq.log("Model: %s" % model)
+
+        data = self.get_data(code, type)
+        X = self.get_X(data, lag)
+        y = self.get_y(data, lag)
+
+        total = 0
+        start = 0
+        stop = train_len + test_len
+        y_len = len(y)
+        while (stop < y_len):
+            self.aq.log("Start:%s, Stop:%s" % (start, stop))
+            X_train = X.iloc[start:(start+train_len)]
+            y_train = y.iloc[start:(start+train_len)]
+            model.fit(X_train, y_train)
+            X_test = X.iloc[(stop-test_len):stop]
+            y_test = y.iloc[(stop-test_len):stop]
+            for idx in range(len(y_test)):
+                if (y_test[idx] == True):
+                    if (model.predict(X_test.iloc[idx].reshape(-1, lag * 3)) == y_test[idx]):
+                        total += abs(X_test.iloc[idx][lag-1])
+                        self.aq.log("Right Prediction, total=%s" % total)
+                    else:
+                        total -= abs(X_test.iloc[idx][lag-1])
+                        self.aq.log("Right Prediction, total=%s" % total)
+                self.aq.log("close_diff=%s, total=%s" % (X_test.iloc[idx][lag-1], total))
+            start = start + test_len
+            stop = stop + test_len
+
+    def short_validate(self, code, type, model, lag, train_len, test_len):
+        self.aq.log("Model: %s" % model)
+
+        data = self.get_data(code, type)
+        X = self.get_X(data, lag)
+        y = self.get_y(data, lag)
+        total = 0
+        start = 0
+        stop = train_len + test_len
+        y_len = len(y)
+        while (stop < y_len):
+            self.aq.log("Start:%s, Stop:%s" % (start, stop))
+            model.fit(X.iloc[start:start + train_len], y.iloc[start:start + train_len])
+            for idx in range(len(y.iloc[stop - test_len:stop])):
+                self.aq.log("Result:%s" % (model.predict(X.iloc[idx].reshape(-1, lag * 3)) == y[idx]))
+                if (y[idx] == False):
+                    if (model.predict(X.iloc[idx].reshape(-1, lag * 3)) == y[idx]):
+                        total += abs(X.iloc[idx][lag - 1])
+                    else:
+                        total -= abs(X.iloc[idx][lag - 1])
+                self.aq.log("close_diff=%s, total=%s" % (X.iloc[idx][2], total))
+            start = start + test_len
+            stop = stop + test_len
+
     def execute(self):
         self.aq.log("Start")
 
         code = "I"
         type = "d"
-        self.cross_validate(code, type, LogisticRegression(), 10)
-        self.cross_validate(code, type, GaussianNB(), 10)
-        self.cross_validate(code, type, KNeighborsClassifier(), 10)
-        self.cross_validate(code, type, DecisionTreeClassifier(), 10)
-        self.cross_validate(code, type, svm.SVC(), 10)
+
+        self.long_validate(code, type, LogisticRegression(), 3, 100, 10)
+
 
         self.aq.log("Stop")

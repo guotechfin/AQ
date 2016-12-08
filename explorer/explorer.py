@@ -16,6 +16,6 @@ class Explorer:
         #ADF(self.aq).execute()
         #CADF(self.aq).execute()
         Classification(self.aq).execute()
-        Regression(self.aq).execute()
+        #Regression(self.aq).execute()
 
         self.aq.log("Stop")
