@@ -17,16 +17,14 @@ class Classification:
     def get_data(self, code, type):
         mysql_connector = connector.connect(host=self.aq.DB_HOST, database=self.aq.DB_NAME,
                                             user=self.aq.DB_USR, password=self.aq.DB_PWD)
-        data = pd.read_sql(
-            """SELECT close, high-low as hl, close-open as oc FROM future_trade WHERE code='%s' AND type='%s' """ % (
-            code, type),
-            con=mysql_connector)
+        data = pd.read_sql("""SELECT close, high-low as hl, close-open as oc FROM future_trade WHERE code='%s' AND type='%s' """
+                           % (code, type), con=mysql_connector)
         data_1 = data.close.diff()
         data_1[0] = 0
         data_2 = data.hl
         data_3 = data.oc
         data = pd.DataFrame({"data_1": data_1, "data_2": data_2, "data_3": data_3})
-        data = pd.DataFrame(preprocessing.normalize(data), columns=["data_1", "data_2", "data_3"])
+        data = pd.DataFrame(data, columns=["data_1", "data_2", "data_3"])
         mysql_connector.close()
         return data
 
@@ -47,13 +45,13 @@ class Classification:
         y = y.apply(lambda x: x >= 0)
         return y
 
-    def cross_validate(self, code, type, model, k_fold):
+    def cross_validate(self, code, type, model, lag, k_fold):
         self.aq.log("Model: %s" % model)
         data = self.get_data(code, type)
-        X = self.get_X(data, 3)
-        y = self.get_y(data, 3)
+        X = self.get_X(data, lag)
+        y = self.get_y(data, lag)
         scores = cross_val_score(model, X, y, cv=k_fold)
-        self.aq.log("Scores Mean: %s\n" % scores.mean())
+        self.aq.log("Accuracy: %0.2f (+/- %0.2f)\n" % (scores.mean(), scores.std() * 2))
 
     def long_short_validate(self, code, type, model, lag, train_len, test_len):
         self.aq.log("Model: %s" % model)
@@ -63,6 +61,8 @@ class Classification:
         y = self.get_y(data, lag)
 
         total = 0
+        right = 0
+        wrong = 0
         start = 0
         stop = train_len + test_len
         y_len = len(y)
@@ -76,18 +76,26 @@ class Classification:
             for idx in range(len(y_test)):
                 if (model.predict(X_test.iloc[idx].reshape(-1, lag * 3)) == y_test.iloc[idx]):
                     total = total + abs(X_test.iloc[idx][lag - 1])
-                    self.aq.log("Right Prediction, close_diff=%s, total=%s" % (X_test.iloc[idx][lag - 1], total))
+                    right += 1
+                    self.aq.log("    Right Prediction, direct=%s, c_diff=%s, total=%s, hit_rate=%s%%" %
+                                      ("Up" if X_test.iloc[idx][lag - 1] == True else "Down",
+                                       y_test.iloc[idx],
+                                       total,
+                                       100 * right / (right + wrong)))
                 else:
                     total = total - abs(X_test.iloc[idx][lag - 1])
-                    self.aq.log("Wrong Prediction, close_diff=%s, total=%s" % (X_test.iloc[idx][lag - 1], total))
+                    wrong += 1
+                    self.aq.log("    Wrong Prediction, direct=%s, c_diff=%s, total=%s, hit_rate=%s%%" %
+                                      ("Up" if X_test.iloc[idx][lag - 1] == True else "Down",
+                                       y_test.iloc[idx],
+                                       total,
+                                       100 * right / (right + wrong)))
             start = start + test_len
             stop = stop + test_len
 
     def execute(self):
         self.aq.log("Start")
-
         code = "I"
         type = "5"
         self.long_short_validate(code, type, LogisticRegression(), 3, 5000, 100)
-
         self.aq.log("Stop")
