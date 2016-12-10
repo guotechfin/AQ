@@ -42,24 +42,16 @@ class Classification:
     def get_y(self, data, lag):
         y = data.data_1[lag:]
         y.index = range(len(y))
-        y = y.apply(lambda x: x >= 0)
+        y = pd.DataFrame(dict(y1=y, y2=y.apply(lambda x: 1 if x >= 0 else -1)))
         return y
 
-    def cross_validate(self, code, type, model, lag, k_fold):
+    def cross_validate(self, X, y, model, lag, k_fold):
         self.aq.log("Model: %s" % model)
-        data = self.get_data(code, type)
-        X = self.get_X(data, lag)
-        y = self.get_y(data, lag)
-        scores = cross_val_score(model, X, y, cv=k_fold)
+        scores = cross_val_score(model, X, y.iloc[:, 1], cv=k_fold)
         self.aq.log("Accuracy: %0.2f (+/- %0.2f)\n" % (scores.mean(), scores.std() * 2))
 
-    def long_short_validate(self, code, type, model, lag, train_len, test_len):
-        self.aq.log("Model: %s" % model)
-
-        data = self.get_data(code, type)
-        X = self.get_X(data, lag)
-        y = self.get_y(data, lag)
-
+    def long_short_validate(self, model, X, y, lag, train_len, test_len):
+        self.aq.log("Model: %s\n" % model)
         total = 0
         right = 0
         wrong = 0
@@ -69,33 +61,42 @@ class Classification:
         while (stop < y_len):
             self.aq.log("Start:%s, Stop:%s" % (start, stop))
             X_train = X.iloc[start:(start + train_len)]
-            y_train = y.iloc[start:(start + train_len)]
+            y_train = y.iloc[start:(start + train_len), 1]
             model.fit(X_train, y_train)
             X_test = X.iloc[(stop - test_len):stop]
             y_test = y.iloc[(stop - test_len):stop]
             for idx in range(len(y_test)):
-                if (model.predict(X_test.iloc[idx].reshape(-1, lag * 3)) == y_test.iloc[idx]):
-                    total = total + abs(X_test.iloc[idx][lag - 1])
+                y_predict = model.predict(X_test.iloc[idx].reshape(-1, lag * 3))
+                if (y_predict == y_test.iloc[idx, 1]):
+                    total = total + abs(y_test.iloc[idx, 0])
                     right += 1
-                    self.aq.log("    Right Prediction, direct=%s, c_diff=%s, total=%s, hit_rate=%s%%" %
-                                      ("Up" if X_test.iloc[idx][lag - 1] == True else "Down",
-                                       y_test.iloc[idx],
-                                       total,
-                                       100 * right / (right + wrong)))
+                    self.aq.log(
+                        "    Right Prediction:\t y_pred=%s,\t y_real=%s,\t c_diff=%s,\t total=%s,\t hit_rate=%s%%" %
+                        ("Up" if y_predict == 1 else "Down",
+                         "Up" if y_test.iloc[idx, 1] == 1 else "Down",
+                         y_test.iloc[idx, 0],
+                         total,
+                         100 * right / (right + wrong)))
                 else:
-                    total = total - abs(X_test.iloc[idx][lag - 1])
+                    total = total - abs(y_test.iloc[idx, 0])
                     wrong += 1
-                    self.aq.log("    Wrong Prediction, direct=%s, c_diff=%s, total=%s, hit_rate=%s%%" %
-                                      ("Up" if X_test.iloc[idx][lag - 1] == True else "Down",
-                                       y_test.iloc[idx],
-                                       total,
-                                       100 * right / (right + wrong)))
+                    self.aq.log(
+                        "    Wrong Prediction:\t y_pred=%s,\t y_real=%s,\t c_diff=%s,\t total=%s,\t hit_rate=%s%%" %
+                        ("Up" if y_predict == 1 else "Down",
+                         "Up" if y_test.iloc[idx, 1] == 1 else "Down",
+                         y_test.iloc[idx, 0],
+                         total,
+                         100 * right / (right + wrong)))
             start = start + test_len
             stop = stop + test_len
 
     def execute(self):
         self.aq.log("Start")
-        code = "I"
+        code = "P"
         type = "5"
-        self.long_short_validate(code, type, LogisticRegression(), 3, 5000, 100)
+        lag = 3
+        data = self.get_data(code, type)
+        X = self.get_X(data, lag)
+        y = self.get_y(data, lag)
+        self.long_short_validate(LogisticRegression(), X, y, 3, 100, 10)
         self.aq.log("Stop")

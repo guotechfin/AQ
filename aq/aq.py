@@ -39,7 +39,8 @@ class AQ:
         func_name = inspect.currentframe().f_back.f_code.co_name
         file_name = inspect.currentframe().f_back.f_code.co_filename
         line_number = inspect.currentframe().f_back.f_code.co_firstlineno
-        self.logger.info((" %s [%s::%s][%s:%i]") % (msg, class_name, func_name, file_name, line_number))
+        #self.logger.info((" %s [%s::%s][%s:%i]") % (msg, class_name, func_name, file_name, line_number))
+        self.logger.info(" %s" % msg)
 
     def execute(self):
         self.log("Start")
