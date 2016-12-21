@@ -32,7 +32,11 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="main.cpp" />
+		<Linker>
+			<Add library="ctp\windows\thostmduserapi.lib" />
+			<Add library="ctp\windows\thosttraderapi.lib" />
+		</Linker>
+		<Unit filename="trader.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
