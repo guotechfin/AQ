@@ -1,6 +1,7 @@
 __pycache__/
 tmp/
-bin/
-obj/
+x64/
+Debug/
+Release/
 .*
 *.log
