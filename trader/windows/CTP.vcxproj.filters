@@ -18,17 +18,8 @@
     <ClCompile Include="CTPMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CTPMd.cpp">
+    <ClCompile Include="CTPSpi.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CTPTrader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CTPMdSpi.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CTPTraderSpi.cpp">
-      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -44,10 +35,7 @@
     <ClInclude Include="ThostFtdcUserApiStruct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CTPMdSpi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CTPTraderSpi.h">
+    <ClInclude Include="CTPSpi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -55,6 +43,9 @@
     <None Include="error.dtd" />
     <None Include="thostmduserapi.dll" />
     <None Include="thosttraderapi.dll" />
+    <None Include="CTP.VC.db">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="error.xml" />

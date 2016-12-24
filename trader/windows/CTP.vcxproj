@@ -111,20 +111,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CTPMain.cpp" />
-    <ClCompile Include="CTPMd.cpp" />
-    <ClCompile Include="CTPMdSpi.cpp" />
-    <ClCompile Include="CTPTrader.cpp" />
-    <ClCompile Include="CTPTraderSpi.cpp" />
+    <ClCompile Include="CTPSpi.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CTPMdSpi.h" />
-    <ClInclude Include="CTPTraderSpi.h" />
+    <ClInclude Include="CTPSpi.h" />
     <ClInclude Include="ThostFtdcMdApi.h" />
     <ClInclude Include="ThostFtdcTraderApi.h" />
     <ClInclude Include="ThostFtdcUserApiDataType.h" />
     <ClInclude Include="ThostFtdcUserApiStruct.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CTP.VC.db" />
     <None Include="error.dtd" />
     <None Include="thostmduserapi.dll" />
     <None Include="thosttraderapi.dll" />

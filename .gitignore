@@ -1,7 +1,10 @@
+.*
+*.log
+*.conf
+*.con
 __pycache__/
 tmp/
 x64/
 Debug/
 Release/
-.*
-*.log
+
