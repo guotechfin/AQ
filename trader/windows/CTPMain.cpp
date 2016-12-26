@@ -28,7 +28,7 @@ void main(void)
 	pMdApi->RegisterSpi(pMdSpi);
 	pMdApi->RegisterFront(front);
 	pMdApi->Init();
-	pMdApi->Join();
+	//pMdApi->Join();
 	pMdApi->Release();
-	delete pMdSpi;
+	std::cout << "End of thread" << std::endl;
 }
